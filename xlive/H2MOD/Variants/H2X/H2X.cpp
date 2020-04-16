@@ -1,3 +1,11 @@
+/*
+	gbMichelle: 2020-04-14  -  2020-04-15
+	 - Added universal firing rate and acceleration calculations for
+	   Xbox behavior emulation.
+*/
+
+#include <math.h>
+
 #include "stdafx.h"
 #include "H2MOD\Variants\H2X\H2X.h"
 
@@ -19,11 +27,56 @@ std::vector<H2X::h2x_mod_info> weapons =
 	{ "objects\\weapons\\rifle\\brute_plasma_rifle\\brute_plasma_rifle", 10.0f, 11.0f, 0, true }
 };
 
-// TODO: find a math formula to fix this
+float calculate_h2x_firerate(float h2v_firerate) {
+	// Calculate the effective firerate per seconds.
+	/* This works because every frame Halo 2 checks to see if enough time has
+	   passed for the gun to be allowed to fire again.
+	   These checks happen more often at higher framerates thus where at 30fps
+	   it had to wait an extra frame, it now does not.
+
+	   We simulate it using this formula */
+
+	if (h2v_firerate < 0.0001) {
+		// Do not divide by 0.
+		return h2v_firerate;
+	} else if (h2v_firerate > 30.0) {
+		/* Firing rates above 30 are not possible at 30fps and below. */
+		return 30.0;
+	}
+
+	/* Convert to double to avoid rounding errors that show up all too often
+	   with floats. */
+	double h2v_firerate_dbl = static_cast<double>(h2v_firerate);
+	// -0.01 to avoid a potential rounding error.
+	return static_cast<float>(30.0 / ceil(1 / h2v_firerate_dbl * 30.0 - 0.01));
+}
+
+float calculate_h2x_recovery_time(float h2v_recovery_time) {
+	if (h2v_recovery_time < 0.0001) {
+		// Our math always adds one tick. So, don't do anything if 0.
+		return h2v_recovery_time;
+	}
+
+	/* The + hack is done because all of the brute forced values
+	   I find here seem to add an extra tick. This should be wrong.
+	   Please double check if that is actually right.
+	   Potentially remove the + hack completely.
+
+	   I am convinced that you over compensated and now your guns are too slow.*/
+
+	float hack = 30.0/1000.0;
+	return ceil(h2v_recovery_time * 30.0) / 30.0 + hack;
+}
+
 void H2X::Initialize(bool enable)
 {
+	// Why even execute any of this if we're not enabled?
+	if (!enable) return;
+
 	for (auto& weapon : weapons)
 	{
+		/* With the value calculation being made universal we should consider
+		   applying this math to all weapon tags. */
 		auto required_datum = tags::find_tag('weap', weapon.tag_string);
 		BYTE* weapon_tag = tags::get_tag<'weap', BYTE>(required_datum);
 		if (weapon_tag != nullptr)
@@ -33,15 +86,47 @@ void H2X::Initialize(bool enable)
 
 			if (barrel_data_block->block_data_offset != -1)
 			{
-				*(float*)(tags::get_tag_data()
-					+ barrel_data_block->block_data_offset
-					+ barrel_data_block_size * weapon.barrel_data_block_index
-					+ (weapon.rounds_per_second_based ? 8 : 32)) = (enable ? weapon.h2x_rate_of_fire : weapon.original_rate_of_fire);
+				// Get the address of where the barrel blocks start.
+				auto barrel_blocks = tags::get_tag_data()
+					+ barrel_data_block->block_data_offset;
+
+				// Go through all barrel blocks and apply the fix.
+				for (int i = 0; i < barrel_data_block->block_count; i++) {
+					auto barrel_block = barrel_blocks + barrel_data_block_size * i;
+
+					float* firerate_lower = (float*)(barrel_block + 4);
+					float* firerate_upper = (float*)(barrel_block + 8);
+					float* acceleration_time = (float*)(barrel_block + 12);
+					float* deceleration_time = (float*)(barrel_block + 16);
+					float* recovery_time = (float*)(barrel_block + 32);
+
+					float new_upper = calculate_h2x_firerate(*firerate_upper);
+					float new_lower = calculate_h2x_firerate(*firerate_lower);
+
+					if (*firerate_lower != *firerate_upper) {
+						/* To simulate the most correct between speeds we
+						   might need to make the climb shorter.
+						   Otherwise the rates will be too slow. */
+
+						double old_difference = static_cast<double>(*firerate_upper) - static_cast<double>(*firerate_lower);
+						double new_difference = static_cast<double>(new_upper) - static_cast<double>(new_lower);
+
+						double factor = new_difference / old_difference;
+
+						*acceleration_time = static_cast<float>(*acceleration_time * factor);
+						*deceleration_time = static_cast<float>(*deceleration_time * factor);
+					}
+
+					*firerate_lower = new_lower;
+					*firerate_upper = new_upper;
+
+					*recovery_time = calculate_h2x_recovery_time(*recovery_time);
+				}
 			}
 		}
 	}
-	
-	if (!h2mod->Server && enable && h2mod->GetMapType() == MULTIPLAYER_MAP)
+
+	if (!h2mod->Server && h2mod->GetMapType() == MULTIPLAYER_MAP)
 	{
 		// H2X Sound_Classes
 		*(float*)(&tags::get_tag_data()[0x4821C]) = 0.0f; /*H2X projectile_impact Index 0 Gains Bounds lower*/
