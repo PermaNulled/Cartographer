@@ -365,7 +365,7 @@ void ConsoleCommands::spawn(datum object_datum, int count, float x, float y, flo
 
 	for (int i = 0; i < count; i++) {
 		try {
-			ObjectPlacementData nObject;
+			s_object_placement_data nObject;
 
 			if (!object_datum.IsNull()) {
 				datum player_datum = Player::getPlayerUnitDatumIndex(h2mod->get_player_datum_index_from_controller_index(0).Index);
@@ -373,20 +373,20 @@ void ConsoleCommands::spawn(datum object_datum, int count, float x, float y, flo
 				real_point3d* player_position = h2mod->get_player_unit_coords(h2mod->get_player_datum_index_from_controller_index(0).Index);
 
 				if (player_position != nullptr) {
-					nObject.placement.x = player_position->x * static_cast <float> (rand()) / static_cast<float>(RAND_MAX);
-					nObject.placement.y = player_position->y * static_cast <float> (rand()) / static_cast<float>(RAND_MAX);
-					nObject.placement.z = (player_position->z + 5.0f) * static_cast <float> (rand()) / static_cast<float>(RAND_MAX);
+					nObject.position.x = player_position->x * static_cast <float> (rand()) / static_cast<float>(RAND_MAX);
+					nObject.position.y = player_position->y * static_cast <float> (rand()) / static_cast<float>(RAND_MAX);
+					nObject.position.z = (player_position->z + 5.0f) * static_cast <float> (rand()) / static_cast<float>(RAND_MAX);
 				}
 				if (specificPosition) {
-					nObject.placement.x = x;
-					nObject.placement.y = y;
-					nObject.placement.z = z;
+					nObject.position.x = x;
+					nObject.position.y = y;
+					nObject.position.z = z;
 				}
 
 				if (!sameTeam)
 					nObject.team_index = NONE;
 
-				LOG_TRACE_GAME("object_datum = {0:#x}, x={1:f}, y={2:f}, z={3:f}", object_datum.ToInt(), nObject.placement.x, nObject.placement.y, nObject.placement.z);
+				LOG_TRACE_GAME("object_datum = {0:#x}, x={1:f}, y={2:f}, z={3:f}", object_datum.ToInt(), nObject.position.x, nObject.position.y, nObject.position.z);
 				unsigned int object_gamestate_datum = Engine::Objects::call_object_new(&nObject);
 				call_add_object_to_sync(object_gamestate_datum);
 			}

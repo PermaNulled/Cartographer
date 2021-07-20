@@ -13,7 +13,7 @@ namespace Engine
 			return p_get_object(object_datum_index, object_type_flags);
 		}
 
-		void __cdecl create_new_placement_data(ObjectPlacementData* s_object_placement_data, datum object_definition_index, datum object_owner, int unk)
+		void __cdecl create_new_placement_data(s_object_placement_data* placement, datum object_definition_index, datum object_owner, int unk)
 		{
 			//LOG_TRACE_GAME("object_placement_data_new(s_object_placement_data: %08X,",s_object_placement_data);
 			//LOG_TRACE_GAME("object_definition_index: %08X, object_owner: %08X, unk: %08X)", object_definition_index, object_owner, unk);
@@ -21,18 +21,18 @@ namespace Engine
 			typedef void(__cdecl object_placement_data_new)(void*, datum, datum, int);
 			auto pobject_placement_data_new = Memory::GetAddress<object_placement_data_new*>(0x132163, 0x121033);
 
-			pobject_placement_data_new(s_object_placement_data, object_definition_index, object_owner, unk);
+			pobject_placement_data_new(placement, object_definition_index, object_owner, unk);
 		}
 
 		//Pass new placement data into Create_object_new
-		int __cdecl call_object_new(ObjectPlacementData* pObject)
+		int __cdecl call_object_new(s_object_placement_data* placement)
 		{
 			//LOG_TRACE_GAME("object_new(pObject: %08X)", pObject);
 
 			typedef int(__cdecl object_new)(void*);
 			auto p_object_new = Memory::GetAddress<object_new*>(0x136CA7, 0x125B77);
 
-			return p_object_new(pObject);
+			return p_object_new(placement);
 		}
 
 		//Pass datum from new object into object to sync

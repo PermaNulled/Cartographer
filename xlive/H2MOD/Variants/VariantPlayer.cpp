@@ -5,13 +5,13 @@
 XUID VariantPlayer::GetXUID(datum _datum, bool player)
 {
 	DatumIterator<s_object_header> objectIt(game_state_objects_header);
-	s_biped_object_definition* playerUnit = (s_biped_object_definition*)objectIt.get_data_at_index(_datum.ToAbsoluteIndex())->object;
+	s_biped_data_definition* playerUnit = (s_biped_data_definition*)objectIt.get_data_at_index(_datum.ToAbsoluteIndex())->object;
 
 	if (player)
 		return Player::getPlayer(_datum.ToAbsoluteIndex())->identifier;
 	else
 	{
-		short player_index = playerUnit->PlayerDatum.ToAbsoluteIndex();
+		short player_index = playerUnit->controlling_player_index;
 		return Player::getPlayer(player_index)->identifier;
 	}
 }
@@ -19,9 +19,9 @@ XUID VariantPlayer::GetXUID(datum _datum, bool player)
 datum VariantPlayer::GetPlayerDatum(datum unit_datum)
 {
 	DatumIterator<s_object_header> objectIt(game_state_objects_header);
-	s_biped_object_definition* playerUnit = (s_biped_object_definition*)objectIt.get_data_at_index(unit_datum.ToAbsoluteIndex())->object;
+	s_biped_data_definition* playerUnit = (s_biped_data_definition*)objectIt.get_data_at_index(unit_datum.ToAbsoluteIndex())->object;
 
-	return playerUnit->PlayerDatum;
+	return playerUnit->controlling_player_index;
 }
 
 datum VariantPlayer::GetPlayerDatum(XUID xuid)
