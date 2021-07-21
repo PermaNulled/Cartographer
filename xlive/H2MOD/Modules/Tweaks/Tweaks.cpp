@@ -9,8 +9,8 @@
 #include "H2MOD\Modules\Accounts\AccountLogin.h"
 #include "H2MOD\Modules\UI\XboxLiveTaskProgress.h"
 #include "..\CustomResolutions\CustomResolutions.h"
-#include "H2MOD/Modules/HudElements/HudElements.h"
-
+#include "H2MOD\Modules\HudElements\HudElements.h"
+#include "Blam\Engine\Game\GameTimeGlobals.h"
 #pragma region Done_Tweaks
 
 typedef int(__cdecl *thookServ1)(HKEY, LPCWSTR);

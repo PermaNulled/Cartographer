@@ -13,11 +13,3 @@ bool s_game_state_objects::indexValid(datum objectDatum)
         return true;
     return false;
 }
-
-//TODO: Add template parameter to cast return to given type biped, weapon, etc.
-void* s_game_state_objects::getObject(datum objectDatum)
-{
-    if (!indexValid(objectDatum))
-        return nullptr;
-    return (void*)&getArray()->datum[objectDatum.ToAbsoluteIndex() * getArray()->datum_element_size];
-}

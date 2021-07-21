@@ -74,7 +74,7 @@ int EXECUTABLE_VERSION = 4;
 //Currently not used in code base
 int get_player_index_from_datum(datum unit_datum)
 {
-	return ((s_biped_object_definition*)s_game_state_objects::getObject(unit_datum))->PlayerDatum.ToAbsoluteIndex();
+	return s_game_state_objects::getObject<s_biped_data_definition>(unit_datum)->controlling_player_index;
 }
 
 #pragma region engine calls
@@ -184,7 +184,7 @@ int __cdecl call_fill_creation_data_from_object_index(int object_index, void* cr
 	return p_fill_creation_data_from_object_index(object_index, creation_data);
 }
 
-signed int __cdecl object_new_hook(ObjectPlacementData* new_object)
+signed int __cdecl object_new_hook(s_object_placement_data* new_object)
 {
 	int variant_index = *(int*)((char*)new_object + 0xC);
 	int result = Engine::Objects::call_object_new(new_object);
@@ -396,7 +396,7 @@ void call_give_player_weapon(int playerIndex, datum weaponId, bool bReset)
 	datum unit_datum = Player::getPlayerUnitDatumIndex(playerIndex);
 	if (unit_datum != NONE)
 	{
-		ObjectPlacementData nObject;
+		s_object_placement_data nObject;
 
 		Engine::Objects::create_new_placement_data(&nObject, weaponId, unit_datum, 0);
 
@@ -735,21 +735,21 @@ void get_object_table_memory()
 	game_state_objects_header = *Memory::GetAddress<s_datum_array**>(0x4E461C, 0x50C8EC);
 }
 
-typedef bool(__cdecl *map_cache_load)(Blam::EngineDefinitions::game_engine_settings* map_load_settings);
+typedef bool(__cdecl *map_cache_load)(s_game_options* options);
 map_cache_load p_map_cache_load;
 
-bool __cdecl OnMapLoad(Blam::EngineDefinitions::game_engine_settings* engine_settings)
+bool __cdecl OnMapLoad(s_game_options* options)
 {
 	static bool resetAfterMatch = false;
 
-	bool result = p_map_cache_load(engine_settings);
+	bool result = p_map_cache_load(options);
 	if (result == false) // verify if the game didn't fail to load the map
 		return false;
 	// clear all the object variant data
 	object_to_variant.clear();
 
 	// set the engine type
-	h2mod->SetCurrentEngineType(engine_settings->map_type);
+	h2mod->SetCurrentEngineType(options->m_engine_type);
 
 	tags::run_callbacks();
 
@@ -776,7 +776,7 @@ bool __cdecl OnMapLoad(Blam::EngineDefinitions::game_engine_settings* engine_set
 		}
 
 		if (b_XboxTick) {
-			engine_settings->tickrate = XboxTick::setTickRate(false);
+			options->tick_rate = XboxTick::setTickRate(false);
 			b_XboxTick = false;
 		}
 
@@ -825,11 +825,11 @@ bool __cdecl OnMapLoad(Blam::EngineDefinitions::game_engine_settings* engine_set
 		{
 			H2X::Initialize(b_H2X);
 			ProjectileFix::ApplyProjectileVelocity();
-			engine_settings->tickrate = XboxTick::setTickRate(false);
+			options->tick_rate = XboxTick::setTickRate(false);
 		}
 		else
 		{
-			engine_settings->tickrate = XboxTick::setTickRate(true);
+			options->tick_rate = XboxTick::setTickRate(true);
 		}
 
 		H2Tweaks::toggleAiMp(true);
@@ -1155,7 +1155,7 @@ void GivePlayerWeaponDatum(datum unit_datum, datum weapon_datum)
 {
 	if (unit_datum != NONE)
 	{
-		ObjectPlacementData nObject;
+		s_object_placement_data nObject;
 
 		Engine::Objects::create_new_placement_data(&nObject, weapon_datum, unit_datum, 0);
 
