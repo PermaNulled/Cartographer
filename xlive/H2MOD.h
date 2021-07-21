@@ -3,7 +3,7 @@
 #include "Blam\Engine\Objects\Objects.h"
 #include "Blam\Engine\Objects\ObjectPlacementData.h"
 
-#include "Blam\Engine\Game\GameEngine.h"
+#include "Blam\Engine\Game\GameOptions.hpp"
 #include "Blam\Engine\Players\Players.h"
 #include "Blam\Common\Common.h"
 

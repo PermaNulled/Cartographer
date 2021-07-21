@@ -735,21 +735,21 @@ void get_object_table_memory()
 	game_state_objects_header = *Memory::GetAddress<s_datum_array**>(0x4E461C, 0x50C8EC);
 }
 
-typedef bool(__cdecl *map_cache_load)(Blam::EngineDefinitions::game_engine_settings* map_load_settings);
+typedef bool(__cdecl *map_cache_load)(s_game_options* options);
 map_cache_load p_map_cache_load;
 
-bool __cdecl OnMapLoad(Blam::EngineDefinitions::game_engine_settings* engine_settings)
+bool __cdecl OnMapLoad(s_game_options* options)
 {
 	static bool resetAfterMatch = false;
 
-	bool result = p_map_cache_load(engine_settings);
+	bool result = p_map_cache_load(options);
 	if (result == false) // verify if the game didn't fail to load the map
 		return false;
 	// clear all the object variant data
 	object_to_variant.clear();
 
 	// set the engine type
-	h2mod->SetCurrentEngineType(engine_settings->map_type);
+	h2mod->SetCurrentEngineType(options->m_engine_type);
 
 	tags::run_callbacks();
 
@@ -776,7 +776,7 @@ bool __cdecl OnMapLoad(Blam::EngineDefinitions::game_engine_settings* engine_set
 		}
 
 		if (b_XboxTick) {
-			engine_settings->tickrate = XboxTick::setTickRate(false);
+			options->tick_rate = XboxTick::setTickRate(false);
 			b_XboxTick = false;
 		}
 
@@ -825,11 +825,11 @@ bool __cdecl OnMapLoad(Blam::EngineDefinitions::game_engine_settings* engine_set
 		{
 			H2X::Initialize(b_H2X);
 			ProjectileFix::ApplyProjectileVelocity();
-			engine_settings->tickrate = XboxTick::setTickRate(false);
+			options->tick_rate = XboxTick::setTickRate(false);
 		}
 		else
 		{
-			engine_settings->tickrate = XboxTick::setTickRate(true);
+			options->tick_rate = XboxTick::setTickRate(true);
 		}
 
 		H2Tweaks::toggleAiMp(true);
